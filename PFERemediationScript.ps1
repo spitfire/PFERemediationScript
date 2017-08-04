@@ -18,7 +18,7 @@
 # ================================================================== 
 
 #Current Version information for script
-[string]$strScriptBuild = "201708050025"
+[string]$strScriptBuild = "201708050030"
 [string]$strScriptVersion = "16.03.5.1" + "." + $strScriptBuild
 
 
@@ -963,7 +963,7 @@ Function Invoke-CHClientAction (){
     Set-CHRegistryValue -strRegKey $global:strPFEKeyPath -strRegValue "PFE_LastAction" -strData "Client $strAction" -strDataType string
     Set-CHRegistryValue -strRegKey $global:strPFEKeyPath -strRegValue "PFE_LastDate" -strData (Get-Date -format yyyy-MM-dd) -strDataType string
     Set-CHRegistryValue -strRegKey $global:strPFEKeyPath -strRegValue "PFE_LastTime" -strData (Get-Date -format HH:mm:ss) -strDataType string
-}#region Invoke-CHClientAction
+}#endregion Invoke-CHClientAction
 
 #region Test-CHStaleLog
 Function Test-CHStaleLog() {
@@ -1752,9 +1752,40 @@ Function Send-CHHttpDDR()
     }
 }#endregion Send-CHHttpDDR
 
+Function Get-SMSSiteAssignment
+{
+	<#
+			Created on:   	08.08.2017 00:27
+			Created by:   	Mieszko Œlusarczyk
+			Version:		1.0
+	
+    .SYNOPSIS
+    Check Configuration Manager Site.
+    
+    .DESCRIPTION
+	Uses WMI to check the currently assigned SCCM site code
+
+    
+    .EXAMPLE
+    Get-SMSSiteAssignment
+
+    .DEPENDENT FUNCTIONS
+    Write-CHLog
+
+    #>
+	Try
+	{
+		Write-CHLog -strFunction "Get-SMSSiteAssignment" -strMessage "Info: Trying to get the currently assigned SCCM site code"
+		$CurrentSiteCode = ([wmiclass]"ROOT\ccm:SMS_Client").GetAssignedSite().sSiteCode
+		Write-CHLog -strFunction "Get-SMSSiteAssignment" -strMessage "Info: Currently assigned SCCM site code is $CurrentSiteCode"
+	}
+	Catch
+	{
+		Write-CHLog -strFunction "Get-SMSSiteAssignment" -strMessage "Error: Failed to get the currently assigned SCCM site code"
+	}
+}
 
 #endregion #################################### END FUNCTIONS ####################################>
-
 
 #region #################################### START GLOBAL VARIABLES ####################################>
 
