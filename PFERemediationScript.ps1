@@ -18,7 +18,7 @@
 # ================================================================== 
 
 #Current Version information for script
-[string]$strScriptBuild = "201708050030"
+[string]$strScriptBuild = "201708050050"
 [string]$strScriptVersion = "16.03.5.1" + "." + $strScriptBuild
 
 
@@ -1758,7 +1758,7 @@ Function Get-SMSSiteAssignment
 	<#
 			Created on:   	08.08.2017 00:27
 			Created by:   	Mieszko Œlusarczyk
-			Version:		1.0
+			Version:		1.0.1
 	
     .SYNOPSIS
     Check Configuration Manager Site.
@@ -1784,6 +1784,7 @@ Function Get-SMSSiteAssignment
 	{
 		Write-CHLog -strFunction "Get-SMSSiteAssignment" -strMessage "Error: Failed to get the currently assigned SCCM site code"
 	}
+	Return $CurrentSiteCode
 }#endregion Get-SMSSiteAssignment
 
 #region Get-PFESiteAssignment
@@ -1831,7 +1832,7 @@ Function Get-PFESiteAssignment
 		Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: `"HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager`" does not exist"
 	}
 	Return $PFEServer
-}#endregion Get-PFESiteAssignment
+}#endregion Get-PFESiteAssignmentGet-PFESiteAssignment
 
 #endregion #################################### END FUNCTIONS ####################################>
 
