@@ -18,12 +18,13 @@
 # ================================================================== 
 
 #Current Version information for script
-[string]$strScriptBuild = "201708050011"
+[string]$strScriptBuild = "201708050025"
 [string]$strScriptVersion = "16.03.5.1" + "." + $strScriptBuild
 
 
 #region #################################### START FUNCTIONS ####################################>
 
+#region Write-CHLog
 Function Write-CHLog (){
     <#
     .SYNOPSIS
@@ -71,8 +72,9 @@ Function Write-CHLog (){
         "Cannot write to log file; exiting script"
         Exit(1)
     }
-}
+}#endregion Write-CHLog
 
+#region Get-CHRegistryValue
 Function Get-CHRegistryValue (){
     <#
     .SYNOPSIS
@@ -125,8 +127,9 @@ Function Get-CHRegistryValue (){
     #returning status
     if($global:blnDebug ){Write-CHLog "Get-CHRegistryValue" "Return value is $strRegRead"}
     return $strRegRead
-}
+}#endregion Get-CHRegistryValue
 
+#region Set-CHRegistryValue
 Function Set-CHRegistryValue (){
     <#
     .SYNOPSIS
@@ -249,8 +252,9 @@ Function Set-CHRegistryValue (){
             }
         }
     }
-}
+}#endregion Set-CHRegistryValue
 
+#region Test-CHWriteWMI
 Function Test-CHWriteWMI (){
     <#
     .SYNOPSIS
@@ -333,8 +337,9 @@ Function Test-CHWriteWMI (){
         Write-CHLog "Test-CHWriteWMI" "Failed to write class PFE to $strNamespace"
         return $false
     }
-}
+}#endregion Test-CHWriteWMI
 
+#region Test-CHWMIHealth
 Function Test-CHWMIHealth (){
     <#
     .SYNOPSIS
@@ -402,8 +407,9 @@ Function Test-CHWMIHealth (){
             return $False
         }
     }
-}
+}#endregion Test-CHWMIHealth
 
+#region Get-CHServiceStatus
 Function Get-CHServiceStatus()
 {
     <#
@@ -503,8 +509,9 @@ Function Get-CHServiceStatus()
          Return $False
     }
 
-}
+}#endregion Get-CHServiceStatus
 
+#region Set-CHServiceStatus
 Function Set-CHServiceStatus()
 {
     <#
@@ -594,8 +601,9 @@ Function Set-CHServiceStatus()
         Return $False
      }
    
-}
+}#endregion Set-CHServiceStatus
 
+#region Invoke-CHWMIRebuild
 Function Invoke-CHWMIRebuild (){
     <#
     .SYNOPSIS
@@ -815,8 +823,9 @@ Function Invoke-CHWMIRebuild (){
         return $True
     }
     else { return $false }
-}
+}#endregion Invoke-CHWMIRebuild
 
+#region Invoke-CHClientAction
 Function Invoke-CHClientAction (){
     
     <#
@@ -954,8 +963,9 @@ Function Invoke-CHClientAction (){
     Set-CHRegistryValue -strRegKey $global:strPFEKeyPath -strRegValue "PFE_LastAction" -strData "Client $strAction" -strDataType string
     Set-CHRegistryValue -strRegKey $global:strPFEKeyPath -strRegValue "PFE_LastDate" -strData (Get-Date -format yyyy-MM-dd) -strDataType string
     Set-CHRegistryValue -strRegKey $global:strPFEKeyPath -strRegValue "PFE_LastTime" -strData (Get-Date -format HH:mm:ss) -strDataType string
-}
+}#region Invoke-CHClientAction
 
+#region Test-CHStaleLog
 Function Test-CHStaleLog() {
 <#
     .SYNOPSIS
@@ -1054,8 +1064,9 @@ Function Test-CHStaleLog() {
         Write-CHLog -strFunction "Test-CHStaleLog" -strMessage "Error - No log file directory found"
         return $true
     }
-}
+}#endregion Test-CHStaleLog
 
+#region Get-CHini
 Function Get-CHini (){
     <#
     .SYNOPSIS
@@ -1125,8 +1136,9 @@ Function Get-CHini (){
     Else {
         Write-CHLog -strFunction "Get-CHINI" -strMessage "$strFile does not exist"
     }
-}
+}#endregion Get-CHini
 
+#region Test-CHAppPolicy
 Function Test-CHAppPolicy()
 {
     <#
@@ -1191,8 +1203,9 @@ Function Test-CHAppPolicy()
         Write-CHLog -strFunction "Test-CHAppPolicy" -strMessage "ERROR - Check Application policy failed with error ($strErrorMsg)"
         Return $False
     }
-}
+}#endregion Test-CHAppPolicy
 
+#region Test-CHAppIntentEval
 Function Test-CHAppIntentEval()
 {
     <#
@@ -1251,8 +1264,9 @@ Function Test-CHAppIntentEval()
     
     #If we got here without an exit it must be false
     Return $False
-}
+}#endregion Test-CHAppIntentEval
 
+#region Test-CHLantern
 Function Test-CHLantern()
 {
     <#
@@ -1318,8 +1332,9 @@ Function Test-CHLantern()
         Write-CHLog -strFunction "Test-CHLantern" -strMessage "No Application Policy conflict found.  Client appears to be healthy."
         Return $True
     }
-}
+}#endregion Test-CHLantern
 
+#region Invoke-CHACPInstall
 Function Invoke-CHACPInstall()
 {
     <#
@@ -1444,8 +1459,9 @@ Function Invoke-CHACPInstall()
         Write-CHLog -strFunction "Invoke-CHACPInstall" -strMessage "WARNING - Remediation disabled"
         Write-CHLog -strFunction "Invoke-CHACPInstall" -strMessage "WARNING - $ACPServiceName will not be repaired"
     }
-}
+}#endregion Invoke-CHACPInstall
 
+#region Invoke-CHBITSRepair
 Function Invoke-CHBITSRepair()
 {
     <#
@@ -1619,8 +1635,9 @@ Function Invoke-CHBITSRepair()
         Return $False
     }
 
-}
+}#endregion Invoke-CHBITSRepair
 
+#region Send-CHHttpDDR
 Function Send-CHHttpDDR()
 {
     <#
@@ -1733,7 +1750,7 @@ Function Send-CHHttpDDR()
 
         Return $False
     }
-}
+}#endregion Send-CHHttpDDR
 
 
 #endregion #################################### END FUNCTIONS ####################################>
@@ -2748,110 +2765,3 @@ else{
 Write-CHLog -strFunction "Main" -strMessage "PFE Client Remediation Script Completed"
 
 #endregion #################################### END MAIN LOGIC ####################################>
-# SIG # Begin signature block
-# MIITkQYJKoZIhvcNAQcCoIITgjCCE34CAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
-# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUhi7DbQZdU2fIUUZSC417fFc/
-# +7Gggg7fMIIEFDCCAvygAwIBAgILBAAAAAABL07hUtcwDQYJKoZIhvcNAQEFBQAw
-# VzELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNV
-# BAsTB1Jvb3QgQ0ExGzAZBgNVBAMTEkdsb2JhbFNpZ24gUm9vdCBDQTAeFw0xMTA0
-# MTMxMDAwMDBaFw0yODAxMjgxMjAwMDBaMFIxCzAJBgNVBAYTAkJFMRkwFwYDVQQK
-# ExBHbG9iYWxTaWduIG52LXNhMSgwJgYDVQQDEx9HbG9iYWxTaWduIFRpbWVzdGFt
-# cGluZyBDQSAtIEcyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlO9l
-# +LVXn6BTDTQG6wkft0cYasvwW+T/J6U00feJGr+esc0SQW5m1IGghYtkWkYvmaCN
-# d7HivFzdItdqZ9C76Mp03otPDbBS5ZBb60cO8eefnAuQZT4XljBFcm05oRc2yrmg
-# jBtPCBn2gTGtYRakYua0QJ7D/PuV9vu1LpWBmODvxevYAll4d/eq41JrUJEpxfz3
-# zZNl0mBhIvIG+zLdFlH6Dv2KMPAXCae78wSuq5DnbN96qfTvxGInX2+ZbTh0qhGL
-# 2t/HFEzphbLswn1KJo/nVrqm4M+SU4B09APsaLJgvIQgAIMboe60dAXBKY5i0Eex
-# +vBTzBj5Ljv5cH60JQIDAQABo4HlMIHiMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMB
-# Af8ECDAGAQH/AgEAMB0GA1UdDgQWBBRG2D7/3OO+/4Pm9IWbsN1q1hSpwTBHBgNV
-# HSAEQDA+MDwGBFUdIAAwNDAyBggrBgEFBQcCARYmaHR0cHM6Ly93d3cuZ2xvYmFs
-# c2lnbi5jb20vcmVwb3NpdG9yeS8wMwYDVR0fBCwwKjAooCagJIYiaHR0cDovL2Ny
-# bC5nbG9iYWxzaWduLm5ldC9yb290LmNybDAfBgNVHSMEGDAWgBRge2YaRQ2XyolQ
-# L30EzTSo//z9SzANBgkqhkiG9w0BAQUFAAOCAQEATl5WkB5GtNlJMfO7FzkoG8IW
-# 3f1B3AkFBJtvsqKa1pkuQJkAVbXqP6UgdtOGNNQXzFU6x4Lu76i6vNgGnxVQ380W
-# e1I6AtcZGv2v8Hhc4EvFGN86JB7arLipWAQCBzDbsBJe/jG+8ARI9PBw+DpeVoPP
-# PfsNvPTF7ZedudTbpSeE4zibi6c1hkQgpDttpGoLoYP9KOva7yj2zIhd+wo7AKvg
-# IeviLzVsD440RZfroveZMzV+y5qKu0VN5z+fwtmK+mWybsd+Zf/okuEsMaL3sCc2
-# SI8mbzvuTXYfecPlf5Y1vC0OzAGwjn//UYCAp5LUs0RGZIyHTxZjBzFLY7Df8zCC
-# BJ8wggOHoAMCAQICEhEh1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQUFADBS
-# MQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xvYmFsU2lnbiBudi1zYTEoMCYGA1UE
-# AxMfR2xvYmFsU2lnbiBUaW1lc3RhbXBpbmcgQ0EgLSBHMjAeFw0xNjA1MjQwMDAw
-# MDBaFw0yNzA2MjQwMDAwMDBaMGAxCzAJBgNVBAYTAlNHMR8wHQYDVQQKExZHTU8g
-# R2xvYmFsU2lnbiBQdGUgTHRkMTAwLgYDVQQDEydHbG9iYWxTaWduIFRTQSBmb3Ig
-# TVMgQXV0aGVudGljb2RlIC0gRzIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
-# AoIBAQCwF66i07YEMFYeWA+x7VWk1lTL2PZzOuxdXqsl/Tal+oTDYUDFRrVZUjtC
-# oi5fE2IQqVvmc9aSJbF9I+MGs4c6DkPw1wCJU6IRMVIobl1AcjzyCXenSZKX1GyQ
-# oHan/bjcs53yB2AsT1iYAGvTFVTg+t3/gCxfGKaY/9Sr7KFFWbIub2Jd4NkZrItX
-# nKgmK9kXpRDSRwgacCwzi39ogCq1oV1r3Y0CAikDqnw3u7spTj1Tk7Om+o/SWJMV
-# TLktq4CjoyX7r/cIZLB6RA9cENdfYTeqTmvT0lMlnYJz+iz5crCpGTkqUPqp0Dw6
-# yuhb7/VfUfT5CtmXNd5qheYjBEKvAgMBAAGjggFfMIIBWzAOBgNVHQ8BAf8EBAMC
-# B4AwTAYDVR0gBEUwQzBBBgkrBgEEAaAyAR4wNDAyBggrBgEFBQcCARYmaHR0cHM6
-# Ly93d3cuZ2xvYmFsc2lnbi5jb20vcmVwb3NpdG9yeS8wCQYDVR0TBAIwADAWBgNV
-# HSUBAf8EDDAKBggrBgEFBQcDCDBCBgNVHR8EOzA5MDegNaAzhjFodHRwOi8vY3Js
-# Lmdsb2JhbHNpZ24uY29tL2dzL2dzdGltZXN0YW1waW5nZzIuY3JsMFQGCCsGAQUF
-# BwEBBEgwRjBEBggrBgEFBQcwAoY4aHR0cDovL3NlY3VyZS5nbG9iYWxzaWduLmNv
-# bS9jYWNlcnQvZ3N0aW1lc3RhbXBpbmdnMi5jcnQwHQYDVR0OBBYEFNSihEo4Whh/
-# uk8wUL2d1XqH1gn3MB8GA1UdIwQYMBaAFEbYPv/c477/g+b0hZuw3WrWFKnBMA0G
-# CSqGSIb3DQEBBQUAA4IBAQCPqRqRbQSmNyAOg5beI9Nrbh9u3WQ9aCEitfhHNmmO
-# 4aVFxySiIrcpCcxUWq7GvM1jjrM9UEjltMyuzZKNniiLE0oRqr2j79OyNvy0oXK/
-# bZdjeYxEvHAvfvO83YJTqxr26/ocl7y2N5ykHDC8q7wtRzbfkiAD6HHGWPZ1BZo0
-# 8AtZWoJENKqA5C+E9kddlsm2ysqdt6a65FDT1De4uiAO0NOSKlvEWbuhbds8zkSd
-# wTgqreONvc0JdxoQvmcKAjZkiLmzGybu555gxEaovGEzbM9OuZy5avCfN/61PU+a
-# 003/3iCOTpem/Z8JvE3KGHbJsE2FUPKA0h0G9VgEB7EYMIIGIDCCBAigAwIBAgIT
-# UgAAABxN1D0InJGIbQAAAAAAHDANBgkqhkiG9w0BAQsFADA/MRMwEQYKCZImiZPy
-# LGQBGRYDY29tMRYwFAYKCZImiZPyLGQBGRYGaXBhcGVyMRAwDgYDVQQDEwdJUFN1
-# YkNBMB4XDTE3MDQxNzE1MTcyNVoXDTIwMDQxNjE1MTcyNVowHTEbMBkGA1UEAxMS
-# SW50ZXJuYXRpb25hbFBhcGVyMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCN
-# DHhqB9jdBRakFFWXJnNdj+ZuOYmN9g+U5v/xsgDam173evS5GV0Zj5w6yFmag1Fj
-# kjhyQmiZcilVrb2z+CU4mgmbkduCZai5/1NN6wiHqTsQyTlwyNCoGRTmHAzWdRgs
-# OJ4SHcW5YWKDSicThtUlEiCipueqLf6J55W0vSnvEwIDAQABo4ICuTCCArUwPgYJ
-# KwYBBAGCNxUHBDEwLwYnKwYBBAGCNxUIgfvTWYSZhyiDsYMahKiqM4SB+SaBGYW0
-# wReFytkCAgFkAgEMMBMGA1UdJQQMMAoGCCsGAQUFBwMDMAsGA1UdDwQEAwIHgDAM
-# BgNVHRMBAf8EAjAAMBsGCSsGAQQBgjcVCgQOMAwwCgYIKwYBBQUHAwMwHQYDVR0O
-# BBYEFKkBcsWCUlbQsQuvlGn8TdH+HNybMB8GA1UdIwQYMBaAFO/UWWdgalRzmf9r
-# cPCTbIgUSaTrMIHxBgNVHR8EgekwgeYwgeOggeCggd2GK2h0dHA6Ly9jZXJ0Lmlw
-# YXBlci5jb20vQ2VydERhdGEvSVBTdWJDQS5jcmyGga1sZGFwOi8vL0NOPUlQU3Vi
-# Q0EsQ049UzAyQVNDQSxDTj1DRFAsQ049UHVibGljJTIwS2V5JTIwU2VydmljZXMs
-# Q049U2VydmljZXMsQ049Q29uZmlndXJhdGlvbixEQz1pcGFwZXIsREM9Y29tP2Nl
-# cnRpZmljYXRlUmV2b2NhdGlvbkxpc3Q/YmFzZT9vYmplY3RDbGFzcz1jUkxEaXN0
-# cmlidXRpb25Qb2ludDCB8QYIKwYBBQUHAQEEgeQwgeEwNwYIKwYBBQUHMAKGK2h0
-# dHA6Ly9jZXJ0LmlwYXBlci5jb20vQ2VydERhdGEvSVBTdWJDQS5jcnQwgaUGCCsG
-# AQUFBzAChoGYbGRhcDovLy9DTj1JUFN1YkNBLENOPUFJQSxDTj1QdWJsaWMlMjBL
-# ZXklMjBTZXJ2aWNlcyxDTj1TZXJ2aWNlcyxDTj1Db25maWd1cmF0aW9uLERDPWlw
-# YXBlcixEQz1jb20/Y0FDZXJ0aWZpY2F0ZT9iYXNlP29iamVjdENsYXNzPWNlcnRp
-# ZmljYXRpb25BdXRob3JpdHkwDQYJKoZIhvcNAQELBQADggIBAGryNXWYcEAErDeM
-# nIORRnlVZchJd2qx6SdEmzX3YFYcoAqnLS6WMGyWLI6Ak2Yirf3xGrzanK42Jlkp
-# D+tP0fBzAUXlcA9cb3w/HIvWFdM+OZqI1YCnLv7tDeJu6cmN9IFhbaowcYC3VgBM
-# w8E3nVWfk99OxeGu/2Q0qZl2ry0LQfw+oI8smPMQekby1rR75EF2phMFef8nQtAz
-# 5NeLWxAU7AgM1vWig4N8LtoaUK8BmRLwV2D39Iddhds0XkWxQfyjYtAhhGH4oMq3
-# L7eFZ0Hi6psuAE3iWFhgXqgV+rlvX6f4Itt+UiktfkTxhuMAzQeNNhaKXwloD7/F
-# 122bD7k0mORD9xx1+jHPbpC0FgfXFccNTfyBTagIylaKDtrEdg0+gUGNCBhlgZfX
-# cM8QlT4aJ1IRB98mv58KbzNUPIVG8C+5bUCPhrFG4yo4AboP9706VplR/g8lT/nY
-# vOD8uqs+orXNlJ4AXB9Wxn6iik4H5ZyioBF5Zhma8yG/Lb1pzXvmZtwwxA61JOOD
-# HO8HQMJQDow4mkQFxs1HRx2k+UWzx0NfvnbzyR4ip39uS6UqXKMrLzIJ2/Gczm/i
-# cmNqo9xRc+kXjJXjFFgnJguG85OY9ALrpBfCUvqf1N27DnCHsfHCLLXny6SU+MaH
-# D69vPYBagfulKZqFHdaEdy/ZMPzoMYIEHDCCBBgCAQEwVjA/MRMwEQYKCZImiZPy
-# LGQBGRYDY29tMRYwFAYKCZImiZPyLGQBGRYGaXBhcGVyMRAwDgYDVQQDEwdJUFN1
-# YkNBAhNSAAAAHE3UPQickYhtAAAAAAAcMAkGBSsOAwIaBQCgeDAYBgorBgEEAYI3
-# AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEMBgorBgEEAYI3AgEEMBwGCisG
-# AQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqGSIb3DQEJBDEWBBTLJbZ/TIBy
-# I6e87iECBACQv2Dh7zANBgkqhkiG9w0BAQEFAASBgCbjZJkIoBtZr/33QFQhnXzD
-# J0u3gGUamvpTDB8rAjDGLwr/8uwuT6RS9qElkqzj1PYC6kl4N74jyRJN6w3ljLzT
-# Im4zxZV+RNdmEMG6/6lC/qa+Rtr/NN7RYsfysVTEq5TOlTaM2vUigjZVPle8/ZB6
-# ocvbPVf3SGwfMEUjNe3coYICojCCAp4GCSqGSIb3DQEJBjGCAo8wggKLAgEBMGgw
-# UjELMAkGA1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNV
-# BAMTH0dsb2JhbFNpZ24gVGltZXN0YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhC
-# fukZzFNBFDAJBgUrDgMCGgUAoIH9MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEw
-# HAYJKoZIhvcNAQkFMQ8XDTE3MDgwNDIyMTIxN1owIwYJKoZIhvcNAQkEMRYEFOwp
-# CjLEm08ZNg+aDrUCmlt8l33EMIGdBgsqhkiG9w0BCRACDDGBjTCBijCBhzCBhAQU
-# Y7gvq2H1g5CWlQULACScUCkz7HkwbDBWpFQwUjELMAkGA1UEBhMCQkUxGTAXBgNV
-# BAoTEEdsb2JhbFNpZ24gbnYtc2ExKDAmBgNVBAMTH0dsb2JhbFNpZ24gVGltZXN0
-# YW1waW5nIENBIC0gRzICEhEh1pmnZJc+8fhCfukZzFNBFDANBgkqhkiG9w0BAQEF
-# AASCAQAE3Yu97qL02lGmagMbgoU6h9aBO9gZkKOq+xelMei9r622pFAs7tCwQW10
-# qzKmqvbZspkaVmWdQ4Jz4vIu30PCm9uWwuwPc5ZuLQ4a49gptTI3uaSLx+K/ZR6X
-# cVBYW8Noklfz+NzDW8QZBNzdr6anCnUjOvsg042RjMId/h7WuD8BNP8HZ6PdQF6q
-# YOg8Wl98a8hSt9hxMZhvecJ1/3jtJGnvchhfKWOpepy8u7/TzO/Z5PvjpeeQ4xOG
-# YWrd6TlMUtraQz4SPuSLbFZ13Owcl5+Jyfy4wj85HOS6MMJVapNV23AHdHJi4dFa
-# 5D5cMq2tm/J48HwG4kR3GEjUeZa1
-# SIG # End signature block
