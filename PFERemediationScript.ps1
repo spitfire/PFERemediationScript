@@ -1799,6 +1799,32 @@ Function Get-PFESiteAssignment
 	Return $PFEServer
 }#endregion Get-PFESiteAssignmentGet-PFESiteAssignment
 
+#region Get-AllDomains
+Function Get-AllDomains
+{
+	<#
+			Created on:   	05.08.2017 00:43
+			Created by:   	Mieszko Œlusarczyk
+			Version:		1.0
+    .SYNOPSIS
+    Get all domains in a forest.
+    
+    .DESCRIPTION
+	The script will get all the domains n the forest and return them as $domains
+
+    
+    .EXAMPLE
+    Get-AllDomains
+
+    #>
+	$Root = [ADSI]"LDAP://RootDSE"
+	$oForestConfig = $Root.Get("configurationNamingContext")
+	$oSearchRoot = [ADSI]("LDAP://CN=Partitions," + $oForestConfig)
+	$AdSearcher = [adsisearcher]"(&(objectcategory=crossref)(netbiosname=*))"
+	$AdSearcher.SearchRoot = $oSearchRoot
+	$domains = $AdSearcher.FindAll()
+	return $domains
+}#endregion Get-AllDomains
 #endregion #################################### END FUNCTIONS ####################################>
 
 #region #################################### START GLOBAL VARIABLES ####################################>
