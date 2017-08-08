@@ -18,8 +18,8 @@
 # ================================================================== 
 
 #Current Version information for script
-[string]$strScriptBuild = "201708050050"
-[string]$strScriptVersion = "16.03.5.1" + "." + $strScriptBuild
+[string]$strScriptBuild = "201708081325"
+[string]$strScriptVersion = "16.03.5.2" + "." + $strScriptBuild
 
 
 #region #################################### START FUNCTIONS ####################################>
@@ -1878,6 +1878,233 @@ function Get-ADSite
 	$ADSite
 }#endregion Get-ADSite
 
+#region Get-SMSSiteCode
+Function Get-SMSSiteCode
+{
+	<#
+			Created on:   	08.08.2017 12:07
+			Created by:   	Mieszko Œlusarczyk
+			Version:		1.0
+    .SYNOPSIS
+    Gets SCCM Site code for the current computer or AD Site
+    
+    .DESCRIPTION
+	Gets SCCM Site code for the current computer (if used with WMI source) or AD Site reveived from Get-ADSite
+
+    
+    .EXAMPLE
+    Get-SMSSiteCode
+	Get-SMSSiteCode -Source WMI -Primary $false
+	Get-SMSSiteCode -Primary $false
+
+    .DEPENDENT FUNCTIONS
+	Get-ADSite
+	Get-AllDomains
+	Write-CHLog
+
+    #>
+	param
+	(
+		[ValidateSet('AD', 'WMI')]
+		[string]$Source = "AD",
+		[bool]$Primary = $true
+	)
+	
+	If ($Source -eq "AD")
+	{
+		If ($Primary -eq $true)
+		{
+			$SMSSiteCode = Get-SMSSiteCode -Source AD -Primary $false
+			If ($SMSSiteCode)
+			{
+				Try
+				{
+					Write-CHLog -strMessage "Debug: Looking for $SMSSiteCode in $($Domain.Properties.ncname[0])" -strFunction Get-SMSSiteCode
+					$ADSysMgmtContainer = [ADSI]("LDAP://CN=System Management,CN=System," + "$($Domain.Properties.ncname[0])")
+					$AdSearcher = [adsisearcher]"(&(mSSMSSiteCode=$SMSSiteCode)(ObjectClass=mSSMSSite))"
+					$AdSearcher.SearchRoot = $ADSysMgmtContainer
+					$CMSiteFromAD = $AdSearcher.FindONE()
+					$SMSPrimarySiteCode = $CMSiteFromAD.Properties.mssmsassignmentsitecode
+					If ($SMSPrimarySiteCode)
+					{
+						Write-CHLog -strMessage "Success: Found SCCM primary site code in AD $SMSPrimarySiteCode" -strFunction Get-SMSSiteCode
+						$SMSSiteCode = $SMSPrimarySiteCode
+					}
+					Else
+					{
+						Write-CHLog -strMessage "Error: Could not find SCCM primary site code" -strFunction Get-SMSSiteCode
+					}
+				}
+				Catch
+				{
+					Write-CHLog -strMessage "Error: Failed to find SCCM primary site code" -strFunction Get-SMSSiteCode
+				}
+			}
+			Else
+			{
+				Write-CHLog -strMessage "Error: Get-SMSSiteCode did not return SMSSiteCode" -strFunction Get-SMSSiteCode
+			}
+			
+			Return $SMSSiteCode
+		}
+		ElseIf ($Primary -eq $false)
+		{
+			$domains = Get-AllDomains
+			$ADSite = Get-ADSite
+			Foreach ($script:domain in $domains)
+			{
+				Try
+				{
+					Write-CHLog -strMessage "Looking for $ADSite in $($Domain.Properties.ncname[0])" -strFunction Get-SMSSiteCode
+					$ADSysMgmtContainer = [ADSI]("LDAP://CN=System Management,CN=System," + "$($Domain.Properties.ncname[0])")
+					$AdSearcher = [adsisearcher]"(&(mSSMSRoamingBoundaries=$ADSite)(ObjectClass=mSSMSSite))"
+					$AdSearcher.SearchRoot = $ADSysMgmtContainer
+					$CMSiteFromAD = $AdSearcher.FindONE()
+					$SMSSiteCode = $CMSiteFromAD.Properties.mssmssitecode
+					If ($SMSSiteCode)
+					{
+						Write-CHLog -strMessage "Success: Found SCCM site code $SMSSiteCode" -strFunction Get-SMSSiteCode
+						Break
+					}
+				}
+				Catch { }
+			}
+			Return $SMSSiteCode
+		}
+	}
+	ElseIf ($Source -eq "WMI")
+	{
+		If ($Primary -eq $true)
+		{
+			Try
+			{
+				Write-CHLog -strMessage "Info: Trying to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode
+				Try
+				{
+					$SMSPrimarySiteCode = ([wmiclass]"ROOT\ccm:SMS_Client").GetAssignedSite().sSiteCode
+				}
+				Catch
+				{
+					Write-CHLog -strMessage "Error: Failed to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode
+				}
+				
+				If ($SMSPrimarySiteCode)
+				{
+					Write-CHLog -strMessage "Success: Found SCCM primary site code in WMI $SMSPrimarySiteCode" -strFunction Get-SMSSiteCode
+					$SMSSiteCode = $SMSPrimarySiteCode
+				}
+				Else
+				{
+					Write-CHLog -strMessage "Error: Failed to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode
+				}
+			}
+			Catch
+			{
+				Write-CHLog -strMessage "Error: Failed to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode
+			}
+			Return $SMSSiteCode
+		}
+		ElseIf ($Primary -eq $false)
+		{
+			Try
+			{
+				Write-CHLog -strMessage "Info: Trying to get site code assignment from WMI" -strFunction Get-SMSSiteCode
+				$SMSSiteCode = Get-WmiObject -Namespace "ROOT\ccm" -Class "SMS_MPProxyInformation" -Property SiteCode | select -ExpandProperty SiteCode
+				If ($SMSSiteCode)
+				{
+					Write-CHLog -strMessage "Success: Found SCCM site code in WMI $SMSSiteCode" -strFunction Get-SMSSiteCode
+				}
+			}
+			Catch
+			{
+				Write-CHLog -strMessage "Error: Failed to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode
+			}
+		}
+	}
+	
+	If ($Primary -eq $true)
+	{
+		$SMSSiteCode = $SMSPrimarySiteCode
+	}
+}#endregion Get-SMSSiteCode
+
+#region Set-SMSSiteCode
+function Set-SMSSiteCode
+{
+	<#
+			Created on:   	08.08.2017 12:07
+			Created by:   	Mieszko Œlusarczyk
+			Version:		1.0
+    .SYNOPSIS
+    Sets SCCM Site code assignment for the current computer
+    
+    .DESCRIPTION
+	Automatically sets SCCM Site code assignment for the current computer 
+
+    
+    .EXAMPLE
+    Set-SMSSiteCode
+
+    .DEPENDENT FUNCTIONS
+	Get-SMSSiteCode
+	Write-CHLog
+
+    #>
+	param
+	(
+		[bool]$Auto = $true
+	)
+	If ($Auto)
+	{
+		Write-CHLog -strMessage "Info: Trying to automatically assign SCCM site" -strFunction Set-SMSSiteCode
+		Try
+		{
+			$SMS_Client = ([wmi]"ROOT\ccm:SMS_Client=@")
+			$SMS_Client.EnableAutoAssignment = $True
+			$SMS_Client.Put()
+			
+			Restart-Service 'CcmExec'
+		}
+		Catch
+		{
+			Write-CHLog -strMessage "Error: Failed to automatically assign SCCM site" -strFunction Set-SMSSiteCode
+		}
+        Write-CHLog -strMessage "Info: Waiting 120 seconds before tryingto read the assignment" -strFunction Set-SMSSiteCode
+        Start-Sleep -Seconds 120
+		$SMSSiteCode = Get-SMSSiteCode -Source WMI -Primary $true
+		If ($SMSSiteCode)
+		{
+			Write-CHLog -strMessage "Info: Automatically assigned to SCCM site $SMSSiteCode" -strFunction Set-SMSSiteCode
+		}
+		Else
+		{
+			Write-CHLog -strMessage "Error: Failed to automatically assign SCCM site" -strFunction Set-SMSSiteCode
+		}
+	}
+}#endregion Set-SMSSiteCode
+
+#region Check-SMSAssignedSite
+function Check-SMSAssignedSite
+{
+	If (Get-SMSSiteCode -Source WMI -Primary $true)
+	{
+		If ((Get-SMSSiteCode -Source AD -Primary $true) -eq (Get-SMSSiteCode -Source WMI -Primary $true))
+		{
+			Write-CHLog -strMessage "Info: SCCM client assignment is up to date" -strFunction Check-SMSAssignedSite
+		}
+		Else
+		{
+			Write-CHLog -strMessage "Warning: SCCM client assignment is NOT up to date, trying to automatically set it" -strFunction Check-SMSAssignedSite
+            Set-SMSSiteCode
+		}
+	}
+	Else
+	{
+		Write-CHLog -strMessage "Warning: SCCM client Couldn't read SCCM site assignment, trying to automatically set it" -strFunction Check-SMSAssignedSite
+		Set-SMSSiteCode
+	}
+}#endregion Check-SMSAssignedSite
+
 #endregion #################################### END FUNCTIONS ####################################>
 
 #region #################################### START GLOBAL VARIABLES ####################################>
@@ -2732,8 +2959,14 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
         if($global:blnSCCMInstalled){
             [string]$strSCCMGUID = Get-CHini -strFile "c:\windows\smscfg.ini" -strSection "Configuration - Client Properties" -strKey "SMS Unique Identifier"
         }
-
-        ###############################################################################
+		
+		###############################################################################
+		#   Check if the currently assigned site is correct
+		###############################################################################
+		
+		Check-SMSAssignedSite
+				
+		###############################################################################
         #   Update ConfigMgr Client Remediation Registry
         ###############################################################################
 
