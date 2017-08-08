@@ -1803,14 +1803,14 @@ Function Get-PFESiteAssignment
 Function Get-AllDomains
 {
 	<#
-			Created on:   	05.08.2017 00:43
+			Created on:   	08.08.2017 11:55
 			Created by:   	Mieszko Œlusarczyk
 			Version:		1.0
     .SYNOPSIS
-    Get all domains in a forest.
+    Gets all domains in a forest.
     
     .DESCRIPTION
-	The script will get all the domains n the forest and return them as $domains
+	The script gets all the domains in the forest and returns them as $domains
 
     
     .EXAMPLE
@@ -1825,6 +1825,59 @@ Function Get-AllDomains
 	$domains = $AdSearcher.FindAll()
 	return $domains
 }#endregion Get-AllDomains
+
+#region Get-ADSite
+function Get-ADSite
+{
+	<#
+			Created on:   	08.08.2017 12:02
+			Created by:   	Mieszko Œlusarczyk
+			Version:		1.0
+    .SYNOPSIS
+    Gets AD site for computer
+    
+    .DESCRIPTION
+	The script gets the current AD site for computer - if no computer is specified it uses $env:COMPUTERNAME
+
+    
+    .EXAMPLE
+    Get-ADSite
+	Get-ADSite COMPUTERNAME
+
+    .DEPENDENT FUNCTIONS
+    Write-CHLog
+
+    #>
+	param
+	(
+		$ComputerName = $env:COMPUTERNAME
+	)
+	Try
+	{
+		Write-CHLog -strMessage "Info: trying to extract site code using System.DirectoryServices.ActiveDirectory.ActiveDirectorySite" -strFunction Get-ADSite
+		$ADSite = ([System.DirectoryServices.ActiveDirectory.ActiveDirectorySite]::GetComputerSite()).Name
+	}
+	Catch
+	{
+		Write-CHLog -strMessage "Warning: could not extract site code using System.DirectoryServices.ActiveDirectory.ActiveDirectorySite, trying nltest" -strFunction Get-ADSite
+		If (!($ComputerName))
+		{
+			Write-CHLog -strMessage "Error: Computer Name not passed" -strFunction Get-ADSite
+		}
+		$site = nltest /server:$ComputerName /dsgetsite 2>$null
+		if ($LASTEXITCODE -eq 0) { $ADSite = $site[0] }
+	}
+	If ($ADSite)
+	{
+		Write-CHLog -strMessage "Info: AD Site Name is $ADSite" -strFunction Get-ADSite
+	}
+	Else
+	{
+		Write-CHLog -strMessage "Error: Failed to find AD Site Name" -strFunction Get-ADSite
+	}
+	$ADSite
+}#endregion Get-ADSite
+
 #endregion #################################### END FUNCTIONS ####################################>
 
 #region #################################### START GLOBAL VARIABLES ####################################>
