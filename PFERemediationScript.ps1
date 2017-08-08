@@ -1752,41 +1752,6 @@ Function Send-CHHttpDDR()
     }
 }#endregion Send-CHHttpDDR
 
-#region Get-SMSSiteAssignment
-Function Get-SMSSiteAssignment
-{
-	<#
-			Created on:   	08.08.2017 00:27
-			Created by:   	Mieszko Œlusarczyk
-			Version:		1.0.1
-	
-    .SYNOPSIS
-    Check Configuration Manager Site.
-    
-    .DESCRIPTION
-	Uses WMI to check the currently assigned SCCM site code
-
-    
-    .EXAMPLE
-    Get-SMSSiteAssignment
-
-    .DEPENDENT FUNCTIONS
-    Write-CHLog
-
-    #>
-	Try
-	{
-		Write-CHLog -strFunction "Get-SMSSiteAssignment" -strMessage "Info: Trying to get the currently assigned SCCM site code"
-		$CurrentSiteCode = ([wmiclass]"ROOT\ccm:SMS_Client").GetAssignedSite().sSiteCode
-		Write-CHLog -strFunction "Get-SMSSiteAssignment" -strMessage "Info: Currently assigned SCCM site code is $CurrentSiteCode"
-	}
-	Catch
-	{
-		Write-CHLog -strFunction "Get-SMSSiteAssignment" -strMessage "Error: Failed to get the currently assigned SCCM site code"
-	}
-	Return $CurrentSiteCode
-}#endregion Get-SMSSiteAssignment
-
 #region Get-PFESiteAssignment
 Function Get-PFESiteAssignment
 {
