@@ -3222,9 +3222,11 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
 		###############################################################################
 		#   Check if the currently assigned SCCM site is correct
 		###############################################################################
-		
-		Check-SMSAssignedSite
-		
+		If ($global:blnSCCMInstalled)
+		{
+			Check-SMSAssignedSite
+		}
+
 		###############################################################################
 		#   Check if the currently assigned PFE site is correct
 		###############################################################################
