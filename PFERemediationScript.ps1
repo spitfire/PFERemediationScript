@@ -853,8 +853,10 @@ Function Invoke-CHClientAction (){
         ValueFromPipelineByPropertyName=$True)]
         [ValidateSet('Install','Uninstall','Repair')][string]$strAction
     )
-
-    Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "The client action $strAction has been initiated"
+	
+	Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "The client action $strAction has been initiated"
+	
+	
 
     If(($global:objClientSettings.WorkstationRemediation -eq $TRUE -and $global:strOSType -eq 'workstation') -or ($global:objClientSettings.ServerRemediation -eq $TRUE -and $global:strOSType -eq 'server')) {
         
@@ -899,11 +901,17 @@ Function Invoke-CHClientAction (){
         Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "Starting Client $strAction with command line $strClientActionCommand $strClientActionArgs"
         
         [int]$intClientActionExitCode = (Start-Process $strClientActionCommand -ArgumentList $strClientActionArgs -wait -NoNewWindow -PassThru ).ExitCode
-
-        if($strAction -ne "Uninstall"){
+		
+		if ($strAction -ne "Uninstall")
+		{
+			If ($ClientInstallationFailuresCount -gt '0')
+			{
+				Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "Installation has failed $ClientInstallationFailuresCount times"
+			}
             if(($intClientActionExitCode -eq 0) -and ($strClientActionArgs.ToLower() -contains "/noservice")){
                 #Client install complete
-                Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "$strAction of ConfigMgr Client complete"
+				Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "$strAction of ConfigMgr Client complete"
+				Set-CHRegistryValue $global:strPFEKeyPath -strRegValue "PFE_ClientInstallationFailures" -strData "0" -strDataType "string"
                 return $true
             }
             elseif(($intClientActionExitCode -eq 0) -and ($strClientActionArgs.ToLower() -notcontains "/noservice")){
@@ -938,7 +946,9 @@ Function Invoke-CHClientAction (){
             }
             else{
                 #client install failed
-                Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "ERROR - $strAction of ConfigMgr Client has failed"
+				Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "ERROR - $strAction of ConfigMgr Client has failed"
+				$ClientInstallationFailuresCount++
+				Set-CHRegistryValue $global:strPFEKeyPath -strRegValue "PFE_ClientInstallationFailures" -strData "$ClientInstallationFailuresCount" -strDataType "string"
                 return $false
             }
         }
@@ -2436,6 +2446,20 @@ if([int](($global:strOSVersion).split(".",2)[0]) -lt 6){
 #set OS Type using OS Name
 if (($strOSName.toLower()).Contains("server")){ [string]$global:strOSType = "server" }
 else { [string]$global:strOSType = "workstation" }
+
+Try
+{
+	[int]$ClientInstallationFailuresCount = Get-CHRegistryValue $global:strPFEKeyPath -strRegValue "PFE_ClientInstallationFailures"
+}
+Catch
+{
+	[int]$ClientInstallationFailuresCount = 0
+}
+
+If ($global:blnDebug)
+{
+	Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "ClientInstallationFailuresCount $ClientInstallationFailuresCount"
+}
 
 #endregion #################################### END GLOBAL VARIABLES ####################################>
 
