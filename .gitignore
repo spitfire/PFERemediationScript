@@ -14,4 +14,7 @@
 #Mac files
 *.DS_Store
 
+#Logs
+*.log
+
 *PFERemediationSettings.xml
