@@ -18,7 +18,7 @@
 # ================================================================== 
 
 #Current Version information for script
-[string]$strScriptBuild = "2017080811624"
+[string]$strScriptBuild = "201708111036"
 [string]$strScriptVersion = "16.03.5.3" + "." + $strScriptBuild
 
 
@@ -3133,7 +3133,14 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
             Set-CHRegistryValue $global:strPFEKeyPath -strRegValue "PFE_LastDate" -strData (Get-Date -format yyyy-MM-dd) -strDataType "string"
             Set-CHRegistryValue $global:strPFEKeyPath -strRegValue "PFE_LastTime" -strData (Get-Date -format HH:mm:ss) -strDataType "string"
         }
-
+		
+		
+		###############################################################################
+		#   Invoke BITS repair
+		###############################################################################
+		
+		Invoke-CHBITSRepair
+		
         ###############################################################################
         #   Install Client
         ###############################################################################
