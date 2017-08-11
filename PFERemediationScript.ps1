@@ -12,13 +12,12 @@
 # embedded; (ii) to include a valid copyright notice on Your software product 
 # in which the Sample Code is embedded; and (iii) to indemnify, hold harmless, 
 # and defend Us and Our suppliers from and against any claims or lawsuits, 
-# including attorneys’ fees, that arise or result from the use or 
-# distribution of the Sample Code.
+# including attorneysï¿½ fees, that arise or result from the use or# distribution of the Sample Code.
 #
 # ================================================================== 
 
 #Current Version information for script
-[string]$strScriptBuild = "201708111044"
+[string]$strScriptBuild = "201708111707"
 [string]$strScriptVersion = "16.03.5.3" + "." + $strScriptBuild
 
 
@@ -1771,7 +1770,7 @@ Function Get-PFESiteAssignment
 {
 	<#
 			Created on:   	05.08.2017 00:43
-			Created by:   	Mieszko Œlusarczyk
+			Created by:   	Mieszko ï¿½lusarczyk
 			Version:		1.0
     .SYNOPSIS
     Get SCCM PFE Remediation Agent Server name.
@@ -1818,7 +1817,7 @@ Function Set-PFESiteAssignment
 {
 	<#
 		#	Created on:   	08.08.2017 14:00
-		#	Created by:   	Mieszko Œlusarczyk
+		#	Created by:   	Mieszko ï¿½lusarczyk
     .SYNOPSIS
     Set SCCM PFE Remediation Agent Server name.
     
@@ -1874,7 +1873,7 @@ Function Get-AllDomains
 {
 	<#
 			Created on:   	08.08.2017 11:55
-			Created by:   	Mieszko Œlusarczyk
+			Created by:   	Mieszko ï¿½lusarczyk
 			Version:		1.0
     .SYNOPSIS
     Gets all domains in a forest.
@@ -1901,7 +1900,7 @@ function Get-ADSite
 {
 	<#
 			Created on:   	08.08.2017 12:02
-			Created by:   	Mieszko Œlusarczyk
+			Created by:   	Mieszko ï¿½lusarczyk
 			Version:		1.0
     .SYNOPSIS
     Gets AD site for computer
@@ -1953,7 +1952,7 @@ Function Get-SMSSiteCode
 {
 	<#
 			Created on:   	08.08.2017 12:07
-			Created by:   	Mieszko Œlusarczyk
+			Created by:   	Mieszko ï¿½lusarczyk
 			Version:		1.0
     .SYNOPSIS
     Gets SCCM Site code for the current computer or AD Site
@@ -2106,7 +2105,7 @@ function Set-SMSSiteCode
 {
 	<#
 			Created on:   	08.08.2017 12:07
-			Created by:   	Mieszko Œlusarczyk
+			Created by:   	Mieszko ï¿½lusarczyk
 			Version:		1.0
     .SYNOPSIS
     Sets SCCM Site code assignment for the current computer
@@ -2160,7 +2159,7 @@ Function Get-SMSMP
 {
 	<#
 			Created on:   	08.08.2017 12:07
-			Created by:   	Mieszko Œlusarczyk
+			Created by:   	Mieszko ï¿½lusarczyk
 			Version:		1.0
     .SYNOPSIS
     Gets SCCM management point for the current computer or AD Site
@@ -2699,13 +2698,21 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
                     if((Set-CHServiceStatus "BITS" -strStartType Manual -strStatus Running) -eq $true){
                         [string]$strBITSHealth = "Healthy"
                     }
-                    else{ [string]$strBITSHealth = "Unhealthy" }
+					else
+					{
+						Invoke-CHBITSRepair -strStartType Automatic -strStatus Stopped
+						[string]$strBITSHealth = "Unhealthy"
+					}
                 }
                 elseif($global:objClientSettings.WorkstationRemediation -eq $true -and $global:strOSType -eq "workstation"){
                     if((Set-CHServiceStatus "BITS" -strStartType DelayedAuto -strStatus Running) -eq $true){
                         [string]$strBITSHealth = "Healthy"
                     }
-                    else{ [string]$strBITSHealth = "Unhealthy" }
+					else
+					{
+						Invoke-CHBITSRepair -strStartType Automatic -strStatus Stopped
+						[string]$strBITSHealth = "Unhealthy"
+					}
                 }
                 else{ if($global:blnDebug){
                     Write-CHLog "Main.ServicesCheck" "Remediation disabled; will not attempt to remediate BITS" }
@@ -3180,14 +3187,7 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
             Set-CHRegistryValue $global:strPFEKeyPath -strRegValue "PFE_LastDate" -strData (Get-Date -format yyyy-MM-dd) -strDataType "string"
             Set-CHRegistryValue $global:strPFEKeyPath -strRegValue "PFE_LastTime" -strData (Get-Date -format HH:mm:ss) -strDataType "string"
         }
-		
-		
-		###############################################################################
-		#   Invoke BITS repair
-		###############################################################################
-		
-		#Invoke-CHBITSRepair -strStartType Automatic -strStatus Running
-		
+
         ###############################################################################
         #   Install Client
         ###############################################################################
