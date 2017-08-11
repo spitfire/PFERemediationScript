@@ -12,7 +12,7 @@
 # embedded; (ii) to include a valid copyright notice on Your software product 
 # in which the Sample Code is embedded; and (iii) to indemnify, hold harmless, 
 # and defend Us and Our suppliers from and against any claims or lawsuits, 
-# including attorneysï¿½ fees, that arise or result from the use or 
+# including attorneys’ fees, that arise or result from the use or 
 # distribution of the Sample Code.
 #
 # ================================================================== 
@@ -867,7 +867,8 @@ Function Invoke-CHClientAction (){
         
         Stop-Service -Name "CCMSetup" -Force -ErrorAction SilentlyContinue
         Stop-Process -Name "CCMSetup" -Force -ErrorAction SilentlyContinue
-        Stop-Process -Name "CCMRestart" -Force -ErrorAction SilentlyContinue
+		Stop-Process -Name "CCMRestart" -Force -ErrorAction SilentlyContinue
+		
 		
 		if (Test-Path "$env:windir\ccmsetup\ccmsetup.exe")
 		{
@@ -878,14 +879,14 @@ Function Invoke-CHClientAction (){
 			}
 			Else
 			{
-				Write-CHLog -strFunction Invoke-CHClientAction -strMessage "$env:windir\ccmsetup\ccmsetup.exe not up to date, using \\$($global:objClientSettings.PrimarySiteServer)\Client$\ccmsetup.exe"
-				[string]$strClientActionCommand = "\\$($global:objClientSettings.PrimarySiteServer)\Client$\ccmsetup.exe"
+				Write-CHLog -strFunction Invoke-CHClientAction -strMessage "$env:windir\ccmsetup\ccmsetup.exe not up to date, using \\$PrimarySiteServer\Client$\ccmsetup.exe"
+				[string]$strClientActionCommand = "\\$PrimarySiteServer\Client$\ccmsetup.exe"
 			}
 		}
 		else
 		{
-			Write-CHLog -strFunction Invoke-CHClientAction -strMessage "$env:windir\ccmsetup\ccmsetup.exe not found, using \\$($global:objClientSettings.PrimarySiteServer)\Client$\ccmsetup.exe"
-			[string]$strClientActionCommand = "\\$($global:objClientSettings.PrimarySiteServer)\Client$\ccmsetup.exe" }
+			Write-CHLog -strFunction Invoke-CHClientAction -strMessage "$env:windir\ccmsetup\ccmsetup.exe not found, using \\$PrimarySiteServer\Client$\ccmsetup.exe"
+			[string]$strClientActionCommand = "\\$PrimarySiteServer\Client$\ccmsetup.exe" }
 	
 	#Convert friendly parameter to values for the SC command
         Switch ($strAction)
@@ -1770,7 +1771,7 @@ Function Get-PFESiteAssignment
 {
 	<#
 			Created on:   	05.08.2017 00:43
-			Created by:   	Mieszko ï¿½lusarczyk
+			Created by:   	Mieszko Œlusarczyk
 			Version:		1.0
     .SYNOPSIS
     Get SCCM PFE Remediation Agent Server name.
@@ -1817,7 +1818,7 @@ Function Set-PFESiteAssignment
 {
 	<#
 		#	Created on:   	08.08.2017 14:00
-		#	Created by:   	Mieszko ï¿½lusarczyk
+		#	Created by:   	Mieszko Œlusarczyk
     .SYNOPSIS
     Set SCCM PFE Remediation Agent Server name.
     
@@ -1873,7 +1874,7 @@ Function Get-AllDomains
 {
 	<#
 			Created on:   	08.08.2017 11:55
-			Created by:   	Mieszko ï¿½lusarczyk
+			Created by:   	Mieszko Œlusarczyk
 			Version:		1.0
     .SYNOPSIS
     Gets all domains in a forest.
@@ -1900,7 +1901,7 @@ function Get-ADSite
 {
 	<#
 			Created on:   	08.08.2017 12:02
-			Created by:   	Mieszko ï¿½lusarczyk
+			Created by:   	Mieszko Œlusarczyk
 			Version:		1.0
     .SYNOPSIS
     Gets AD site for computer
@@ -1952,7 +1953,7 @@ Function Get-SMSSiteCode
 {
 	<#
 			Created on:   	08.08.2017 12:07
-			Created by:   	Mieszko ï¿½lusarczyk
+			Created by:   	Mieszko Œlusarczyk
 			Version:		1.0
     .SYNOPSIS
     Gets SCCM Site code for the current computer or AD Site
@@ -2105,7 +2106,7 @@ function Set-SMSSiteCode
 {
 	<#
 			Created on:   	08.08.2017 12:07
-			Created by:   	Mieszko ï¿½lusarczyk
+			Created by:   	Mieszko Œlusarczyk
 			Version:		1.0
     .SYNOPSIS
     Sets SCCM Site code assignment for the current computer
@@ -2159,7 +2160,7 @@ Function Get-SMSMP
 {
 	<#
 			Created on:   	08.08.2017 12:07
-			Created by:   	Mieszko ï¿½lusarczyk
+			Created by:   	Mieszko Œlusarczyk
 			Version:		1.0
     .SYNOPSIS
     Gets SCCM management point for the current computer or AD Site
@@ -2354,8 +2355,16 @@ Catch{
 }
 
 #get SCCM assigned sitecode and version
-Try{
-    [string]$global:strSiteCode = Get-CHRegistryValue "HKLM:\SOFTWARE\Microsoft\SMS\Mobile Client" "AssignedSiteCode"
+Try
+{
+	Try
+	{
+		[string]$global:strSiteCode = Get-SMSSiteCode -Primary $true -Source AD
+	}
+	Catch
+	{
+		[string]$global:strSiteCode = Get-CHRegistryValue "HKLM:\SOFTWARE\Microsoft\SMS\Mobile Client" "AssignedSiteCode"
+	}
     [string]$strSCCMVersion = Get-CHRegistryValue "HKLM:\software\microsoft\sms\mobile client" "ProductVersion"
 }
 Catch{
@@ -2385,6 +2394,26 @@ else
 
 #Get latest SCCM client version from xml
 $LatestSCCMVersion = $global:objClientSettings.LatestSCCMVersion
+
+#Check if Primary Site Server from PFERemediationSettings.xml is same as the one from AD
+[string]$PrimarySiteServer = Get-SMSMP -Primary $true -Source AD
+If ($PrimarySiteServer)
+{
+	If ($PrimarySiteServer -ne $($global:objClientSettings.PrimarySiteServer))
+	{
+		Write-CHLog -strFunction Main.Globals -strMessage "Primary Site Server from PFERemediationSettings.xml ($($global:objClientSettings.PrimarySiteServer)) differs from the one from AD ($PrimarySiteServer), using the latter one"
+	}
+	Else
+	{
+		[string]$PrimarySiteServer = $global:objClientSettings.PrimarySiteServer
+		Write-CHLog -strFunction Main.Globals -strMessage "Primary Site Server from PFERemediationSettings.xml is same as the one from AD ($PrimarySiteServer), continuing"
+	}
+}
+Else
+{
+	[string]$PrimarySiteServer = $global:objClientSettings.PrimarySiteServer
+	Write-CHLog -strFunction Main.Globals -strMessage "Could not get Primary Site Server from AD, using the one from PFERemediationSettings.xml ($PrimarySiteServer)"
+}
 
 #get OS Name and Version
 [string]$strOSName = Get-CHRegistryValue "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" "ProductName"
@@ -3317,21 +3346,21 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
                             }
                             else{
                                 if($global:blnDebug) { Write-CHLog -strFunction "Main" -strMessage "Copying DDR to Network Share; validating share path exists" }
-                                if(Test-Path "\\$($global:objClientSettings.primarySiteServer)\PFEIncoming$"){
-                                    if($global:blnDebug) { Write-CHLog -strFunction "Main" -strMessage "Share path \\$($global:objClientSettings.primarySiteServer)\PFEIncoming$ exists; copying DDR to Network Share" }
+                                if(Test-Path "\\$PrimarySiteServer\PFEIncoming$"){
+                                    if($global:blnDebug) { Write-CHLog -strFunction "Main" -strMessage "Share path \\$PrimarySiteServer\PFEIncoming$ exists; copying DDR to Network Share" }
 
                                     Try{
-                                        Copy-Item "$global:strCurrentLocation\$($env:COMPUTERNAME).DDR" "\\$($global:objClientSettings.primarySiteServer)\PFEIncoming$" -ErrorAction Stop
+                                        Copy-Item "$global:strCurrentLocation\$($env:COMPUTERNAME).DDR" "\\$PrimarySiteServer\PFEIncoming$" -ErrorAction Stop
 
                                         if($global:blnDebug) { Write-CHLog -strFunction "Main" -strMessage "Successfully copied DDR to network share" }
                                     }
                                     Catch{
                                         [string]$strErrorMsg = ($Error[0].toString()).Split(".")[0]
-                                        Write-CHLog -strFunction "Main" -strMessage "Error - Copy to \\$($global:objClientSettings.primarySiteServer)\PFEIncoming$ failed with error $strErrorMsg"
+                                        Write-CHLog -strFunction "Main" -strMessage "Error - Copy to \\$PrimarySiteServer\PFEIncoming$ failed with error $strErrorMsg"
                                     }
                                 }
                                 else{
-                                    Write-CHLog -strFunction "Main" -strMessage "Error - PFEIncoming$ share is not accessible on $($global:objClientSettings.primarySiteServer)"
+                                    Write-CHLog -strFunction "Main" -strMessage "Error - PFEIncoming$ share is not accessible on $PrimarySiteServer"
                                 }
                             }
                         }
