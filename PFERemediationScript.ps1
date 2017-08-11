@@ -18,7 +18,7 @@
 # ================================================================== 
 
 #Current Version information for script
-[string]$strScriptBuild = "201708111036"
+[string]$strScriptBuild = "201708111044"
 [string]$strScriptVersion = "16.03.5.3" + "." + $strScriptBuild
 
 
@@ -868,13 +868,26 @@ Function Invoke-CHClientAction (){
         Stop-Service -Name "CCMSetup" -Force -ErrorAction SilentlyContinue
         Stop-Process -Name "CCMSetup" -Force -ErrorAction SilentlyContinue
         Stop-Process -Name "CCMRestart" -Force -ErrorAction SilentlyContinue
-
-        if(Test-Path "c:\windows\ccmsetup\ccmsetup.exe"){
-            [string]$strClientActionCommand = "c:\windows\ccmsetup\ccmsetup.exe"
-        }
-        else{ [string]$strClientActionCommand = "\\$($global:objClientSettings.PrimarySiteServer)\Client$\ccmsetup.exe" }
-
-        #Convert friendly parameter to values for the SC command
+		
+		if (Test-Path "$env:windir\ccmsetup\ccmsetup.exe")
+		{
+			If ((Get-Item "$env:windir\ccmsetup\ccmsetup.exe").VersionInfo.ProductVersion -ge $LatestSCCMVersion)
+			{
+				Write-CHLog -strFunction Invoke-CHClientAction -strMessage "$env:windir\ccmsetup\ccmsetup.exe is up to date, using it"
+				[string]$strClientActionCommand = "$env:windir\ccmsetup\ccmsetup.exe"
+			}
+			Else
+			{
+				Write-CHLog -strFunction Invoke-CHClientAction -strMessage "$env:windir\ccmsetup\ccmsetup.exe not up to date, using \\$($global:objClientSettings.PrimarySiteServer)\Client$\ccmsetup.exe"
+				[string]$strClientActionCommand = "\\$($global:objClientSettings.PrimarySiteServer)\Client$\ccmsetup.exe"
+			}
+		}
+		else
+		{
+			Write-CHLog -strFunction Invoke-CHClientAction -strMessage "$env:windir\ccmsetup\ccmsetup.exe not found, using \\$($global:objClientSettings.PrimarySiteServer)\Client$\ccmsetup.exe"
+			[string]$strClientActionCommand = "\\$($global:objClientSettings.PrimarySiteServer)\Client$\ccmsetup.exe" }
+	
+	#Convert friendly parameter to values for the SC command
         Switch ($strAction)
         {
             "Install"   {[string]$strClientActionArgs = "$($global:objClientSettings.ExtraEXECommands) SMSSITECODE=$($global:strSiteCode) $($global:objClientSettings.ExtraMSICommands)"}
@@ -1012,7 +1025,7 @@ Function Test-CHStaleLog() {
 
     #get log file location from registry
     [string]$strCMInstallKey = 'HKLM:\SOFTWARE\Microsoft\CCM\Logging\@Global'
-    [string]$strCMClientInstallLog = 'C:\Windows\ccmsetup\Logs\ccmsetup.log'
+    [string]$strCMClientInstallLog = '$env:windir\ccmsetup\Logs\ccmsetup.log'
     
     if(Test-Path $strCMInstallKey){
         [string]$strCMInstallLocation = Get-CHRegistryValue -strRegKey $strCMInstallKey -strRegValue 'LogDirectory'
@@ -1076,7 +1089,7 @@ Function Get-CHini (){
     .EXAMPLE
     Get-CHINI -parameter "value"
     .EXAMPLE
-    Get-CHINI -strFile "c:\Windows\smscfg.ini" -strSection "Configuration - Client Properties" -strKey "SID"
+    Get-CHINI -strFile "$env:windir\smscfg.ini" -strSection "Configuration - Client Properties" -strKey "SID"
     .PARAMETER strFile
     Full path to desired ini file
     .PARAMETER strSection
@@ -1101,7 +1114,7 @@ Function Get-CHini (){
     )
  
     <#Test settings to run without function call
-	$strFile = "c:\Windows\smscfg.ini"
+	$strFile = "$env:windir\smscfg.ini"
     $strSection = "Configuration - Client Properties"
     $strKey = "SID"
 	#>
@@ -2361,12 +2374,17 @@ if($strSCCMVersion.StartsWith("4")){
         $global:blnSCCMInstalled = $False
     }
 }
-elseif($strSCCMVersion.StartsWith("5")){
-    $global:blnSCCMInstalled = $True
+elseif ($strSCCMVersion.StartsWith("5"))
+{
+	$global:blnSCCMInstalled = $True
 }
-else{
-    $global:blnSCCMInstalled = $False
+else
+{
+	$global:blnSCCMInstalled = $False
 }
+
+#Get latest SCCM client version from xml
+$LatestSCCMVersion = $global:objClientSettings.LatestSCCMVersion
 
 #get OS Name and Version
 [string]$strOSName = Get-CHRegistryValue "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" "ProductName"
@@ -3139,7 +3157,7 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
 		#   Invoke BITS repair
 		###############################################################################
 		
-		Invoke-CHBITSRepair
+		Invoke-CHBITSRepair -strStartType Automatic -strStatus Running
 		
         ###############################################################################
         #   Install Client
@@ -3169,7 +3187,7 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
         }
 
         if($global:blnSCCMInstalled){
-            [string]$strSCCMGUID = Get-CHini -strFile "c:\windows\smscfg.ini" -strSection "Configuration - Client Properties" -strKey "SMS Unique Identifier"
+            [string]$strSCCMGUID = Get-CHini -strFile "$env:windir\smscfg.ini" -strSection "Configuration - Client Properties" -strKey "SMS Unique Identifier"
         }
 		
 		###############################################################################
