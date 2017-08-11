@@ -889,16 +889,21 @@ Function Invoke-CHClientAction (){
 		{
 			Write-CHLog -strFunction Invoke-CHClientAction -strMessage "$env:windir\ccmsetup\ccmsetup.exe not found, using \\$PrimarySiteServer\Client$\ccmsetup.exe"
 			[string]$strClientActionCommand = "\\$PrimarySiteServer\Client$\ccmsetup.exe" }
-	
-	#Convert friendly parameter to values for the SC command
+		
+		If ($ClientInstallationFailuresCount -gt '5')
+		{
+			Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "Installation has failed $ClientInstallationFailuresCount times, uninstalling"
+			$strAction = "Uninstall"
+		}
+		#Convert friendly parameter to values for the SC command
         Switch ($strAction)
         {
             "Install"   {[string]$strClientActionArgs = "$($global:objClientSettings.ExtraEXECommands) SMSSITECODE=$($global:strSiteCode) $($global:objClientSettings.ExtraMSICommands)"}
             "Uninstall" {[string]$strClientActionArgs = "/Uninstall"}
             "Repair"    {[string]$strClientActionArgs = "$($global:objClientSettings.extraEXECommands) SMSSITECODE=$($global:strSiteCode) RESETKEYINFORMATION=TRUE REMEDIATE=TRUE $($global:objClientSettings.extraMSICommands)"}
         }
-
-        Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "Starting Client $strAction with command line $strClientActionCommand $strClientActionArgs"
+		
+		Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "Starting Client $strAction with command line $strClientActionCommand $strClientActionArgs"
         
         [int]$intClientActionExitCode = (Start-Process $strClientActionCommand -ArgumentList $strClientActionArgs -wait -NoNewWindow -PassThru ).ExitCode
 		
@@ -952,7 +957,8 @@ Function Invoke-CHClientAction (){
                 return $false
             }
         }
-        else{
+		else
+		{
             if($intClientActionExitCode -eq 0) {
                 Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "System Center ConfigMgr Client successfully uninstalled"
                 $global:blnSCCMInstalled = $false
