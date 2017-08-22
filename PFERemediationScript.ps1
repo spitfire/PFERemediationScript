@@ -3261,9 +3261,11 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
 		###############################################################################
 		#   Check if the currently assigned PFE site is correct
 		###############################################################################
-		
-		Check-PFEAssignedSite
-				
+		If ($global:strOSType -ne "server")
+		{
+			Check-PFEAssignedSite
+		}
+	
 		###############################################################################
         #   Update ConfigMgr Client Remediation Registry
         ###############################################################################
