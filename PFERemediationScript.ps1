@@ -18,8 +18,8 @@
 # ================================================================== 
 
 #Current Version information for script
-[string]$strScriptBuild = "201708111707"
-[string]$strScriptVersion = "16.03.5.3" + "." + $strScriptBuild
+[string]$strScriptBuild = "201708221005"
+[string]$strScriptVersion = "16.03.5.4" + "." + $strScriptBuild
 
 
 #region #################################### START FUNCTIONS ####################################>
