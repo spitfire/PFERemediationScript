@@ -960,7 +960,8 @@ Function Invoke-CHClientAction (){
 		else
 		{
             if($intClientActionExitCode -eq 0) {
-                Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "System Center ConfigMgr Client successfully uninstalled"
+				Write-CHLog -strFunction "Invoke-CHClientAction" -strMessage "System Center ConfigMgr Client successfully uninstalled"
+				Set-CHRegistryValue $global:strPFEKeyPath -strRegValue "PFE_ClientInstallationFailures" -strData "0" -strDataType "string"
                 $global:blnSCCMInstalled = $false
                 #If Policy Platform is installed, Remove it
                 Try{
