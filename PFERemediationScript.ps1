@@ -2228,7 +2228,7 @@ Function Get-SMSMP
 				$MP = $CMManagementPointFromAD.Properties.mssmsmpname[0]
 				If ($MP)
 				{
-					If ($global:blnDebug) { -strMessage "Success: Found SCCM $SMSMPType $MP in AD" -strFunction Get-SMSMP }
+					If ($global:blnDebug) {Write-CHLog -strMessage "Success: Found SCCM $SMSMPType $MP in AD" -strFunction Get-SMSMP }
 				}
 				Else
 				{
@@ -2258,7 +2258,7 @@ Function Get-SMSMP
 		}
 		If ($global:blnDebug)
 		{
-			-strMessage "Info: Trying to find SCCM $SMSMPType in WMI" -strFunction Get-SMSMP
+			Write-CHLog -strMessage "Info: Trying to find SCCM $SMSMPType in WMI" -strFunction Get-SMSMP
 			
 			Try
 			{
