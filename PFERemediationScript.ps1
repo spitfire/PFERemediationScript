@@ -1941,7 +1941,7 @@ function Get-ADSite
 	)
 	Try
 	{
-		If ($global:blnDebug) { -strMessage "Info: trying to extract site code using System.DirectoryServices.ActiveDirectory.ActiveDirectorySite" -strFunction Get-ADSite }
+		If ($global:blnDebug) {Write-CHLog -strMessage "Info: trying to extract site code using System.DirectoryServices.ActiveDirectory.ActiveDirectorySite" -strFunction Get-ADSite }
 		$ADSite = ([System.DirectoryServices.ActiveDirectory.ActiveDirectorySite]::GetComputerSite()).Name
 	}
 	Catch
