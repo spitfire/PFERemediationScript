@@ -3835,6 +3835,22 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
         }
 
         ###############################################################################
+		#   Check if the currently assigned SCCM site is correct
+		###############################################################################
+		If ($SCCMInstalled)
+		{
+			Check-SMSAssignedSite
+		}
+
+		###############################################################################
+		#   Check if the currently assigned PFE site is correct
+		###############################################################################
+		If ($OSType -ne "server")
+		{
+			Check-PFEAssignedSite
+		}
+
+        ###############################################################################
         #   Update ConfigMgr Client Remediation Registry
         ###############################################################################
 
