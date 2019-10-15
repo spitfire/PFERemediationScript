@@ -1946,15 +1946,15 @@ Function Write-CHEventLog()
 #region Get-PFESiteAssignment
 Function Get-PFESiteAssignment
 {
-    <#
-            Created on:   	05.08.2017 00:43
-            Created by:   	Mieszko Œlusarczyk
-            Version:		1.0
+	<#
+			Created on:   	05.08.2017 00:43
+			Created by:   	Mieszko Ślusarczyk
+			Version:		1.0
     .SYNOPSIS
     Get SCCM PFE Remediation Agent Server name.
     
     .DESCRIPTION
-    The script will read the primary SCCM site currently assigned to SCCM PFE Remediation Agent from registry and display it's FQDN
+	The script will read the primary SCCM site currently assigned to SCCM PFE Remediation Agent from registry and display it's FQDN
 
     
     .EXAMPLE
@@ -1964,31 +1964,542 @@ Function Get-PFESiteAssignment
     Write-CHLog
 
     #>
-    If (Test-Path "HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager")
-    {
-        Try
-        {
-            $PFEServer = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager").PrimarySiteName
-            If ($PFEServer)
-            {
-                Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Info: PFE server name is $PFEServer"
-            }
-            Else
-            {
-                Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: Could not get PFE server name"
-            }
-        }
-        Catch
-        {
-            Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: Could not get PFE server name"
-        }
-    }
-    Else
-    {
-        Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: `"HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager`" does not exist"
-    }
-    Return $PFEServer
+	If (Test-Path "HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager")
+	{
+		Try
+		{
+			$PFEServer = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager").PrimarySiteName
+			If ($PFEServer)
+			{
+				If ($global:blnDebug) { Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Info: PFE server name is $PFEServer" }
+			}
+			Else
+			{
+				Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: Could not get PFE server name"
+			}
+		}
+		Catch
+		{
+			Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: Could not get PFE server name"
+		}
+	}
+	Else
+	{
+		Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: `"HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager`" does not exist"
+	}
+	Return $PFEServer
 }#endregion Get-PFESiteAssignment
+
+#region Set-PFESiteAssignment
+Function Set-PFESiteAssignment
+{
+	<#
+		#	Created on:   	08.08.2017 14:00
+		#	Created by:   	Mieszko Ślusarczyk
+    .SYNOPSIS
+    Set SCCM PFE Remediation Agent Server name.
+    
+    .DESCRIPTION
+	The script will assign PFE Remediation Agent with SCCM primary site and display it's FQDN
+
+    
+    .EXAMPLE
+    Set-PFESiteAssignment
+
+    .DEPENDENT FUNCTIONS
+    Write-CHLog
+
+    #>
+	$PrimarySiteServer = Get-SMSMP -Source AD -Primary $true
+	If ($PrimarySiteServer)
+	{
+		If (Test-Path "HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager")
+		{
+			Try
+			{
+				
+				Write-CHLog -strMessage "Info: Setting PFE server name to $PrimarySiteServer" -strFunction Set-PFESiteAssignment
+				Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager" -Name PrimarySiteName -Value "$PrimarySiteServer"
+				Try
+				{
+					Write-CHLog -strMessage "Info: PFE server name changed, restarting PFERemediation service" -strFunction Set-PFESiteAssignment
+					Restart-Service PFERemediation
+				}
+				Catch
+				{
+					Write-CHLog -strMessage "Error: Failed restart PFERemediation service" -strFunction Set-PFESiteAssignment
+				}
+			}
+			Catch
+			{
+				Write-CHLog -strMessage "Error: Failed to set PFE server name to $PrimarySiteServer" -strFunction Set-PFESiteAssignment
+			}
+		}
+		Else
+		{
+			Write-CHLog -strMessage "Error: `"HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager`" does not exist." -strFunction Set-PFESiteAssignment
+		}
+	}
+	Else
+	{
+		Write-CHLog -strMessage "Error: No Primary Site Server FQDN detected" -strFunction Set-PFESiteAssignment
+	}
+}#endregion Set-PFESiteAssignment
+
+#region Get-AllDomains
+Function Get-AllDomains
+{
+	<#
+			Created on:   	08.08.2017 11:55
+			Created by:   	Mieszko Ślusarczyk
+			Version:		1.0
+    .SYNOPSIS
+    Gets all domains in a forest.
+    
+    .DESCRIPTION
+	The script gets all the domains in the forest and returns them as $domains
+
+    
+    .EXAMPLE
+    Get-AllDomains
+
+    #>
+	$Root = [ADSI]"LDAP://RootDSE"
+	$oForestConfig = $Root.Get("configurationNamingContext")
+	$oSearchRoot = [ADSI]("LDAP://CN=Partitions," + $oForestConfig)
+	$AdSearcher = [adsisearcher]"(&(objectcategory=crossref)(netbiosname=*))"
+	$AdSearcher.SearchRoot = $oSearchRoot
+	$domains = $AdSearcher.FindAll()
+	return $domains
+}#endregion Get-AllDomains
+
+#region Get-ADSite
+function Get-ADSite
+{
+	<#
+			Created on:   	08.08.2017 12:02
+			Created by:   	Mieszko Ślusarczyk
+			Version:		1.0
+    .SYNOPSIS
+    Gets AD site for computer
+    
+    .DESCRIPTION
+	The script gets the current AD site for computer - if no computer is specified it uses $env:COMPUTERNAME
+
+    
+    .EXAMPLE
+    Get-ADSite
+	Get-ADSite COMPUTERNAME
+
+    .DEPENDENT FUNCTIONS
+    Write-CHLog
+
+    #>
+	param
+	(
+		$ComputerName = $env:COMPUTERNAME
+	)
+	Try
+	{
+		If ($global:blnDebug) {Write-CHLog -strMessage "Info: trying to extract site code using System.DirectoryServices.ActiveDirectory.ActiveDirectorySite" -strFunction Get-ADSite }
+		$ADSite = ([System.DirectoryServices.ActiveDirectory.ActiveDirectorySite]::GetComputerSite()).Name
+	}
+	Catch
+	{
+		Write-CHLog -strMessage "Warning: could not extract site code using System.DirectoryServices.ActiveDirectory.ActiveDirectorySite, trying nltest" -strFunction Get-ADSite
+		If (!($ComputerName))
+		{
+			Write-CHLog -strMessage "Error: Computer Name not passed" -strFunction Get-ADSite
+		}
+		$site = nltest /server:$ComputerName /dsgetsite 2>$null
+		if ($LASTEXITCODE -eq 0) { $ADSite = $site[0] }
+	}
+	If ($ADSite)
+	{
+		If ($global:blnDebug){ Write-CHLog -strMessage "Info: AD Site Name is $ADSite" -strFunction Get-ADSite }
+	}
+	Else
+	{
+		Write-CHLog -strMessage "Error: Failed to find AD Site Name" -strFunction Get-ADSite
+	}
+	$ADSite
+}#endregion Get-ADSite
+
+#region Get-SMSSiteCode
+Function Get-SMSSiteCode
+{
+	<#
+			Created on:   	08.08.2017 12:07
+			Created by:   	Mieszko Ślusarczyk
+			Version:		1.0
+    .SYNOPSIS
+    Gets SCCM Site code for the current computer or AD Site
+    
+    .DESCRIPTION
+	Gets SCCM Site code for the current computer (if used with WMI source) or AD Site reveived from Get-ADSite
+
+    
+    .EXAMPLE
+    Get-SMSSiteCode
+	Get-SMSSiteCode -Source WMI -Primary $false
+	Get-SMSSiteCode -Primary $false
+
+    .DEPENDENT FUNCTIONS
+	Get-ADSite
+	Get-AllDomains
+	Write-CHLog
+
+    #>
+	param
+	(
+		[ValidateSet('AD', 'WMI')]
+		[string]$Source = "AD",
+		[bool]$Primary = $true
+	)
+	
+	If ($Source -eq "AD")
+	{
+		If ($Primary -eq $true)
+		{
+			$SMSSiteCode = Get-SMSSiteCode -Source AD -Primary $false
+			If ($SMSSiteCode)
+			{
+				Try
+				{
+					If ($global:blnDebug) { Write-CHLog -strMessage "Debug: Looking for $SMSSiteCode in $($Domain.Properties.ncname[0])" -strFunction Get-SMSSiteCode }
+					$ADSysMgmtContainer = [ADSI]("LDAP://CN=System Management,CN=System," + "$($Domain.Properties.ncname[0])")
+					$AdSearcher = [adsisearcher]"(&(mSSMSSiteCode=$SMSSiteCode)(ObjectClass=mSSMSSite))"
+					$AdSearcher.SearchRoot = $ADSysMgmtContainer
+					$CMSiteFromAD = $AdSearcher.FindONE()
+					$SMSPrimarySiteCode = $CMSiteFromAD.Properties.mssmsassignmentsitecode
+					If ($SMSPrimarySiteCode)
+					{
+						If ($global:blnDebug){ Write-CHLog -strMessage "Success: Found SCCM primary site code $SMSPrimarySiteCode in AD" -strFunction Get-SMSSiteCode }
+						$SMSSiteCode = $SMSPrimarySiteCode
+					}
+					Else
+					{
+						Write-CHLog -strMessage "Error: Could not find SCCM primary site code" -strFunction Get-SMSSiteCode
+					}
+				}
+				Catch
+				{
+					Write-CHLog -strMessage "Error: Failed to find SCCM primary site code" -strFunction Get-SMSSiteCode
+				}
+			}
+			Else
+			{
+				Write-CHLog -strMessage "Error: Get-SMSSiteCode did not return SMSSiteCode" -strFunction Get-SMSSiteCode
+			}
+			
+			Return $SMSSiteCode
+		}
+		ElseIf ($Primary -eq $false)
+		{
+			$domains = Get-AllDomains
+			$ADSite = Get-ADSite
+			Foreach ($script:domain in $domains)
+			{
+				Try
+				{
+					If ($global:blnDebug){ Write-CHLog -strMessage "Looking for $ADSite in $($Domain.Properties.ncname[0])" -strFunction Get-SMSSiteCode }
+					$ADSysMgmtContainer = [ADSI]("LDAP://CN=System Management,CN=System," + "$($Domain.Properties.ncname[0])")
+					$AdSearcher = [adsisearcher]"(&(mSSMSRoamingBoundaries=$ADSite)(ObjectClass=mSSMSSite))"
+					$AdSearcher.SearchRoot = $ADSysMgmtContainer
+					$CMSiteFromAD = $AdSearcher.FindONE()
+					$SMSSiteCode = $CMSiteFromAD.Properties.mssmssitecode
+					If ($SMSSiteCode)
+					{
+						If ($global:blnDebug){ Write-CHLog -strMessage "Success: Found SCCM site code $SMSSiteCode" -strFunction Get-SMSSiteCode }
+						Break
+					}
+				}
+				Catch { }
+			}
+			Return $SMSSiteCode
+		}
+	}
+	ElseIf ($Source -eq "WMI")
+	{
+		If ($Primary -eq $true)
+		{
+			Try
+			{
+				If ($global:blnDebug){ Write-CHLog -strMessage "Info: Trying to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode }
+				Try
+				{
+					$SMSPrimarySiteCode = ([wmiclass]"ROOT\ccm:SMS_Client").GetAssignedSite().sSiteCode
+				}
+				Catch
+				{
+					Write-CHLog -strMessage "Error: Failed to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode
+				}
+				
+				If ($SMSPrimarySiteCode)
+				{
+					If ($global:blnDebug)
+					{ Write-CHLog -strMessage "Success: Found SCCM primary site code in WMI $SMSPrimarySiteCode" -strFunction Get-SMSSiteCode }
+					$SMSSiteCode = $SMSPrimarySiteCode
+				}
+				Else
+				{
+					Write-CHLog -strMessage "Error: Failed to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode
+				}
+			}
+			Catch
+			{
+				Write-CHLog -strMessage "Error: Failed to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode
+			}
+			Return $SMSSiteCode
+		}
+		ElseIf ($Primary -eq $false)
+		{
+			Try
+			{
+				If ($global:blnDebug)
+				{ Write-CHLog -strMessage "Info: Trying to get site code assignment from WMI" -strFunction Get-SMSSiteCode }
+				$SMSSiteCode = Get-WmiObject -Namespace "ROOT\ccm" -Class "SMS_MPProxyInformation" -Property SiteCode | select -ExpandProperty SiteCode
+				If ($SMSSiteCode)
+				{
+					If ($global:blnDebug)
+					{ Write-CHLog -strMessage "Success: Found SCCM site code in WMI $SMSSiteCode" -strFunction Get-SMSSiteCode }
+				}
+			}
+			Catch
+			{
+				Write-CHLog -strMessage "Error: Failed to get primary site code assignment from WMI" -strFunction Get-SMSSiteCode
+			}
+		}
+	}
+	
+	If ($Primary -eq $true)
+	{
+		$SMSSiteCode = $SMSPrimarySiteCode
+	}
+}#endregion Get-SMSSiteCode
+
+#region Set-SMSSiteCode
+function Set-SMSSiteCode
+{
+	<#
+			Created on:   	08.08.2017 12:07
+			Created by:   	Mieszko Ślusarczyk
+			Version:		1.0
+    .SYNOPSIS
+    Sets SCCM Site code assignment for the current computer
+    
+    .DESCRIPTION
+	Automatically sets SCCM Site code assignment for the current computer 
+
+    
+    .EXAMPLE
+    Set-SMSSiteCode
+
+    .DEPENDENT FUNCTIONS
+	Get-SMSSiteCode
+	Write-CHLog
+
+    #>
+	param
+	(
+		[bool]$Auto = $true
+	)
+	If ($Auto)
+	{
+		Try
+		{
+			$SMS_Client = ([wmi]"ROOT\ccm:SMS_Client=@")
+			$SMS_Client.EnableAutoAssignment = $True
+			$SMS_Client.Put()
+			
+			Restart-Service 'CcmExec'
+		}
+		Catch
+		{
+			Write-CHLog -strMessage "Error: Failed to automatically assign SCCM site" -strFunction Set-SMSSiteCode
+		}
+        Write-CHLog -strMessage "Info: Waiting 120 seconds before trying to read the assignment" -strFunction Set-SMSSiteCode
+        Start-Sleep -Seconds 120
+		$SMSSiteCode = Get-SMSSiteCode -Source WMI -Primary $true
+		If ($SMSSiteCode)
+		{
+			Write-CHLog -strMessage "Info: Automatically assigned to SCCM site $SMSSiteCode" -strFunction Set-SMSSiteCode
+		}
+		Else
+		{
+			Write-CHLog -strMessage "Error: Failed to automatically assign SCCM site" -strFunction Set-SMSSiteCode
+		}
+	}
+}#endregion Set-SMSSiteCode
+
+#region Get-SMSMP
+Function Get-SMSMP
+{
+	<#
+			Created on:   	08.08.2017 12:07
+			Created by:   	Mieszko Ślusarczyk
+			Version:		1.0
+    .SYNOPSIS
+    Gets SCCM management point for the current computer or AD Site
+    
+    .DESCRIPTION
+	Gets SCCM management point for the current computer (if used with WMI source) or AD Site reveived from Get-ADSite
+
+    
+    .EXAMPLE
+    Get-SMSMP
+	Get-SMSMP -Source WMI -Primary $false
+	Get-SMSMP -Primary $false
+
+    .DEPENDENT FUNCTIONS
+	Get-ADSite
+	Get-AllDomains
+	Write-CHLog
+
+    #>
+	param
+	(
+		[ValidateSet('AD', 'WMI')]
+		[string]$Source = "AD",
+		[bool]$Primary = $true
+	)
+	If ($Source -eq "AD")
+	{
+		If ($Primary -eq $true)
+		{
+			$SMSSiteCode = Get-SMSSiteCode -Source AD -Primary $true
+			[string]$SMSMPType = "Primary Site Management Point"
+		}
+		ElseIf ($Primary -eq $false)
+		{
+			$SMSSiteCode = Get-SMSSiteCode -Source AD -Primary $false
+			[string]$SMSMPType = "Management Point"
+		}
+		
+		If ($SMSSiteCode)
+		{
+			If ($global:blnDebug){ Write-CHLog -strMessage "Info: Trying to find SCCM $SMSMPType in AD" -strFunction Get-SMSMP }
+			Try
+			{
+				$ADSysMgmtContainer = [ADSI]("LDAP://CN=System Management,CN=System," + "$($Domain.Properties.ncname[0])")
+				$AdSearcher = [adsisearcher]"(&(Name=SMS-MP-$SMSSiteCode-*)(objectClass=mSSMSManagementPoint))"
+				$AdSearcher.SearchRoot = $ADSysMgmtContainer
+				$CMManagementPointFromAD = $AdSearcher.FindONE()
+				$MP = $CMManagementPointFromAD.Properties.mssmsmpname[0]
+				If ($MP)
+				{
+					If ($global:blnDebug) {Write-CHLog -strMessage "Success: Found SCCM $SMSMPType $MP in AD" -strFunction Get-SMSMP }
+				}
+				Else
+				{
+					Write-CHLog -strMessage "Error: Failed to find SCCM $SMSMPType in AD" -strFunction Get-SMSMP
+				}
+			}
+			Catch
+			{
+				Write-CHLog -strMessage "Error: Failed to find SCCM $SMSMPType in AD" -strFunction Get-SMSMP
+			}
+			Return $MP
+		}
+		Else
+		{
+			Write-CHLog -strMessage "Error: Get-SMSSiteCode did not return SMSPrimarySiteCode" -strFunction Get-SMSMP
+		}
+	}
+	ElseIf ($Source -eq "WMI")
+	{
+		If ($Primary -eq $true)
+		{
+			[string]$SMSMPType = "Primary Site Management Point"
+		}
+		ElseIf ($Primary -eq $false)
+		{
+			[string]$SMSMPType = "Management Point"
+		}
+		If ($global:blnDebug)
+		{
+			Write-CHLog -strMessage "Info: Trying to find SCCM $SMSMPType in WMI" -strFunction Get-SMSMP
+			
+			Try
+			{
+				If ($Primary -eq $true)
+				{
+					$MP = Get-WmiObject -Namespace "ROOT\ccm" -Class "SMS_LookupMP" -Property Name | select -ExpandProperty Name
+				}
+				ElseIf ($Primary -eq $false)
+				{
+					$MP = Get-WmiObject -Namespace "ROOT\ccm" -Class "SMS_LocalMP" -Property Name | select -ExpandProperty Name
+				}
+				If ($MP)
+				{
+					Write-CHLog -strMessage "Success: SCCM $SMSMPType in WMI is $MP" -strFunction Get-SMSMP
+				}
+				Else
+				{
+					Write-CHLog -strMessage "Info: Failed to find SCCM $SMSMPType in WMI" -strFunction Get-SMSMP
+				}
+			}
+			Catch
+			{
+				Write-CHLog -strMessage "Info: Failed to find SCCM $SMSMPType in WMI" -strFunction Get-SMSMP
+			}
+		}
+		Return $MP
+	}
+	Return $MP
+}#endregion Get-SMSMP
+
+#region Check-SMSAssignedSite
+function Check-SMSAssignedSite
+{
+	Write-CHLog -strMessage "Info: Checking SCCM client assignment" -strFunction Check-SMSAssignedSite
+	[string]$SMSSiteCodeWMI = Get-SMSSiteCode -Source WMI -Primary $true
+	If ($SMSSiteCodeWMI)
+	{
+		[string]$SMSSiteCodeAD = Get-SMSSiteCode -Source AD -Primary $true
+		If ("$SMSSiteCodeAD" -eq "$SMSSiteCodeWMI")
+		{
+			Write-CHLog -strMessage "Info: SCCM client assignment is up to date ($SMSSiteCodeWMI)" -strFunction Check-SMSAssignedSite
+		}
+		Else
+		{
+			Write-CHLog -strMessage "Warning: SCCM Site Code in WMI: $SMSSiteCodeWMI in AD: $SMSSiteCodeAD " -strFunction Check-SMSAssignedSite
+			Write-CHLog -strMessage "Warning: SCCM client assignment is NOT up to date, trying to automatically set it" -strFunction Check-SMSAssignedSite
+            Set-SMSSiteCode
+		}
+	}
+	Else
+	{
+		Write-CHLog -strMessage "Warning: SCCM client couldn't read SCCM site assignment, trying to automatically set it" -strFunction Check-SMSAssignedSite
+		Set-SMSSiteCode
+	}
+}#endregion Check-SMSAssignedSite
+
+#region Check-PFEAssignedSite
+function Check-PFEAssignedSite
+{
+	Write-CHLog -strMessage "Info: Checking PFE agent assignment" -strFunction Check-SMSAssignedSite
+	[string]$PFESiteAssignment = Get-PFESiteAssignment
+	[string]$SMSMP = Get-SMSMP -Source AD -Primary $true
+	If ($PFESiteAssignment)
+	{
+		If ($PFESiteAssignment -eq $SMSMP)
+		{
+			Write-CHLog -strMessage "Info: PFE agent assignment is up to date ($PFESiteAssignment)" -strFunction Check-PFEAssignedSite
+		}
+		Else
+		{
+			Write-CHLog -strMessage "Warning: PFE agent assignment is: $PFESiteAssignment, SCCM Primary Management point is $SMSMP" -strFunction Check-PFEAssignedSite
+			Write-CHLog -strMessage "Warning: PFE agent assignment is NOT up to date trying to automatically set it" -strFunction Check-PFEAssignedSite
+			Set-PFESiteAssignment
+		}
+	}
+	Else
+	{
+		Write-CHLog -strMessage "Warning: PFE agent couldn't read site assignment, trying to automatically set it" -strFunction Check-PFEAssignedSite
+		Set-PFESiteAssignment
+	}
+}#endregion Check-PFEAssignedSite
 
 #endregion #################################### END FUNCTIONS ####################################>
 
