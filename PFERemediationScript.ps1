@@ -1943,6 +1943,52 @@ Function Write-CHEventLog()
     }
 }
 
+#region Get-PFESiteAssignment
+Function Get-PFESiteAssignment
+{
+    <#
+            Created on:   	05.08.2017 00:43
+            Created by:   	Mieszko Œlusarczyk
+            Version:		1.0
+    .SYNOPSIS
+    Get SCCM PFE Remediation Agent Server name.
+    
+    .DESCRIPTION
+    The script will read the primary SCCM site currently assigned to SCCM PFE Remediation Agent from registry and display it's FQDN
+
+    
+    .EXAMPLE
+    Get-PFESiteAssignment
+
+    .DEPENDENT FUNCTIONS
+    Write-CHLog
+
+    #>
+    If (Test-Path "HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager")
+    {
+        Try
+        {
+            $PFEServer = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager").PrimarySiteName
+            If ($PFEServer)
+            {
+                Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Info: PFE server name is $PFEServer"
+            }
+            Else
+            {
+                Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: Could not get PFE server name"
+            }
+        }
+        Catch
+        {
+            Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: Could not get PFE server name"
+        }
+    }
+    Else
+    {
+        Write-CHLog -strFunction "Get-PFESiteAssignment" -strMessage "Error: `"HKLM:\SOFTWARE\Microsoft\Microsoft PFE Remediation for Configuration Manager`" does not exist"
+    }
+    Return $PFEServer
+}#endregion Get-PFESiteAssignment
 
 #endregion #################################### END FUNCTIONS ####################################>
 
