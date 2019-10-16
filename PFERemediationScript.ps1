@@ -1213,7 +1213,7 @@ Function Test-CHStaleLog()
     }
 }
 
-Function Get-CHini()
+ Function Get-CHini()
 {
     <#
     .SYNOPSIS
@@ -2449,57 +2449,57 @@ Function Get-SMSMP
 	Return $MP
 }#endregion Get-SMSMP
 
-#region Check-SMSAssignedSite
-function Check-SMSAssignedSite
+#region Test-SMSAssignedSite
+function Test-SMSAssignedSite
 {
-	Write-CHLog -strMessage "Info: Checking SCCM client assignment" -strFunction Check-SMSAssignedSite
+	Write-CHLog -strMessage "Info: Checking SCCM client assignment" -strFunction Test-SMSAssignedSite
 	[string]$SMSSiteCodeWMI = Get-SMSSiteCode -Source WMI -Primary $true
 	If ($SMSSiteCodeWMI)
 	{
 		[string]$SMSSiteCodeAD = Get-SMSSiteCode -Source AD -Primary $true
 		If ("$SMSSiteCodeAD" -eq "$SMSSiteCodeWMI")
 		{
-			Write-CHLog -strMessage "Info: SCCM client assignment is up to date ($SMSSiteCodeWMI)" -strFunction Check-SMSAssignedSite
+			Write-CHLog -strMessage "Info: SCCM client assignment is up to date ($SMSSiteCodeWMI)" -strFunction Test-SMSAssignedSite
 		}
 		Else
 		{
-			Write-CHLog -strMessage "Warning: SCCM Site Code in WMI: $SMSSiteCodeWMI in AD: $SMSSiteCodeAD " -strFunction Check-SMSAssignedSite
-			Write-CHLog -strMessage "Warning: SCCM client assignment is NOT up to date, trying to automatically set it" -strFunction Check-SMSAssignedSite
+			Write-CHLog -strMessage "Warning: SCCM Site Code in WMI: $SMSSiteCodeWMI in AD: $SMSSiteCodeAD " -strFunction Test-SMSAssignedSite
+			Write-CHLog -strMessage "Warning: SCCM client assignment is NOT up to date, trying to automatically set it" -strFunction Test-SMSAssignedSite
             Set-SMSSiteCode
 		}
 	}
 	Else
 	{
-		Write-CHLog -strMessage "Warning: SCCM client couldn't read SCCM site assignment, trying to automatically set it" -strFunction Check-SMSAssignedSite
+		Write-CHLog -strMessage "Warning: SCCM client couldn't read SCCM site assignment, trying to automatically set it" -strFunction Test-SMSAssignedSite
 		Set-SMSSiteCode
 	}
-}#endregion Check-SMSAssignedSite
+}#endregion Test-SMSAssignedSite
 
-#region Check-PFEAssignedSite
-function Check-PFEAssignedSite
+#region Test-PFEAssignedSite
+function Test-PFEAssignedSite
 {
-	Write-CHLog -strMessage "Info: Checking PFE agent assignment" -strFunction Check-SMSAssignedSite
+	Write-CHLog -strMessage "Info: Checking PFE agent assignment" -strFunction Test-SMSAssignedSite
 	[string]$PFESiteAssignment = Get-PFESiteAssignment
 	[string]$SMSMP = Get-SMSMP -Source AD -Primary $true
 	If ($PFESiteAssignment)
 	{
 		If ($PFESiteAssignment -eq $SMSMP)
 		{
-			Write-CHLog -strMessage "Info: PFE agent assignment is up to date ($PFESiteAssignment)" -strFunction Check-PFEAssignedSite
+			Write-CHLog -strMessage "Info: PFE agent assignment is up to date ($PFESiteAssignment)" -strFunction Test-PFEAssignedSite
 		}
 		Else
 		{
-			Write-CHLog -strMessage "Warning: PFE agent assignment is: $PFESiteAssignment, SCCM Primary Management point is $SMSMP" -strFunction Check-PFEAssignedSite
-			Write-CHLog -strMessage "Warning: PFE agent assignment is NOT up to date trying to automatically set it" -strFunction Check-PFEAssignedSite
+			Write-CHLog -strMessage "Warning: PFE agent assignment is: $PFESiteAssignment, SCCM Primary Management point is $SMSMP" -strFunction Test-PFEAssignedSite
+			Write-CHLog -strMessage "Warning: PFE agent assignment is NOT up to date trying to automatically set it" -strFunction Test-PFEAssignedSite
 			Set-PFESiteAssignment
 		}
 	}
 	Else
 	{
-		Write-CHLog -strMessage "Warning: PFE agent couldn't read site assignment, trying to automatically set it" -strFunction Check-PFEAssignedSite
+		Write-CHLog -strMessage "Warning: PFE agent couldn't read site assignment, trying to automatically set it" -strFunction Test-PFEAssignedSite
 		Set-PFESiteAssignment
 	}
-}#endregion Check-PFEAssignedSite
+}#endregion Test-PFEAssignedSite
 
 #endregion #################################### END FUNCTIONS ####################################>
 
@@ -3839,7 +3839,7 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
 		###############################################################################
 		If ($SCCMInstalled)
 		{
-			Check-SMSAssignedSite
+			Test-SMSAssignedSite
 		}
 
 		###############################################################################
@@ -3847,7 +3847,7 @@ if(([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::
 		###############################################################################
 		If ($OSType -ne "server")
 		{
-			Check-PFEAssignedSite
+			Test-PFEAssignedSite
 		}
 
         ###############################################################################
